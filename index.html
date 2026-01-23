@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK Builder Pro - Acode Edition</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #eef2f3; color: #333; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; }
+        input, textarea { width: 100%; margin-top: 5px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; }
+        input:focus, textarea:focus { border-color: #007bff; }
+        button { width: 100%; background: #007bff; color: white; border: none; padding: 15px; margin-top: 20px; border-radius: 8px; font-size: 1em; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #status { margin-top: 15px; text-align: center; font-size: 0.9em; color: #666; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>APK Creator (Acode)</h2>
+    
+    <label>Название приложения:</label>
+    <input type="text" id="appName" placeholder="Например: My Cool App">
+
+    <label>Код приложения (HTML/JS):</label>
+    <textarea id="appCode" rows="6" placeholder="<h1>Привет мир!</h1>"></textarea>
+
+    <label>Иконка приложения:</label>
+    <input type="file" id="appIcon" accept="image/*">
+
+    <button id="buildBtn" onclick="startBuild()">СОЗДАТЬ APK</button>
+    <div id="status">Ожидание...</div>
+</div>
+
+<script>
+    async function startBuild() {
+        const name = document.getElementById('appName').value.trim();
+        const code = document.getElementById('appCode').value.trim();
+        const iconFile = document.getElementById('appIcon').files[0];
+        const status = document.getElementById('status');
+        const btn = document.getElementById('buildBtn');
+
+        // Проверка заполнения
+        if (!name || !code || !iconFile) {
+            alert("Заполни все поля и выбери иконку!");
+            return;
+        }
+
+        // Подготовка данных
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('code', code);
+        formData.append('icon', iconFile);
+
+        // Обновление UI
+        status.innerText = "⏳ Соединение с сервером и сборка...";
+        status.style.color = "#007bff";
+        btn.disabled = true;
+
+        try {
+            // Твой сервер на GitHub Codespaces
+            const SERVER_URL = 'https://vigilant-goldfish-jjv5rrgx6rxjhq5j4-3000.app.github.dev/build';
+
+            const response = await fetch(SERVER_URL, {
+                method: 'POST',
+                body: formData,
+                // Важно для CORS при запросах из Acode/WebView
+                mode: 'cors'
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                
+                // Создаем ссылку для скачивания
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${name}.apk`;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Чистим за собой
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                }, 100);
+
+                status.innerText = "✅ Успех! APK скачивается.";
+                status.style.color = "green";
+            } else {
+                status.innerText = "❌ Ошибка сервера: " + response.status;
+                status.style.color = "red";
+            }
+        } catch (error) {
+            console.error(error);
+            status.innerText = "❌ Ошибка: Сервер выключен или URL неверный.";
+            status.style.color = "red";
+        } finally {
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>
