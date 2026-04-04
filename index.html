@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DENISIA APK OS - ГЕНЕРАТОР</title>
+    <style>
+        body { background: #000; color: #00eaff; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .panel { width: 100%; max-width: 600px; border: 3px solid #00eaff; padding: 20px; box-shadow: 0 0 20px #00eaff; background: #050505; border-radius: 10px; }
+        h1 { text-align: center; text-shadow: 0 0 10px #00eaff; font-size: 1.5em; }
+        label { display: block; margin-top: 15px; color: #fff; font-size: 0.9em; }
+        input, textarea { width: 100%; background: #111; border: 1px solid #00eaff; color: #0f0; margin: 5px 0; padding: 12px; box-sizing: border-box; outline: none; }
+        .build-btn { width: 100%; background: #00eaff; color: #000; border: none; padding: 20px; font-weight: bold; font-size: 1.3em; cursor: pointer; margin-top: 20px; transition: 0.2s; }
+        .build-btn:hover { background: #fff; box-shadow: 0 0 30px #fff; }
+        #status { margin-top: 15px; text-align: center; color: #ff00ff; font-weight: bold; border-top: 1px solid #333; padding-top: 10px; }
+        #preview { width: 64px; height: 64px; border: 1px solid #00eaff; margin: 10px auto; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <h1>DENISIA APK FACTORY v3.0</h1>
+    
+    <label>НАЗВАНИЕ ПРИЛОЖЕНИЯ:</label>
+    <input type="text" id="appName" placeholder="Введите имя...">
+
+    <label>ИКОНКА ПРИЛОЖЕНИЯ (ИЗ ГАЛЕРЕИ):</label>
+    <input type="file" id="iconFile" accept="image/*" onchange="previewIcon()">
+    <img id="preview" src="">
+
+    <label>ИСХОДНЫЙ КОД (HTML/JS/CSS):</label>
+    <textarea id="appCode" rows="10" placeholder="Вставьте ваш код сюда..."></textarea>
+
+    <button class="build-btn" onclick="sendToFactory()">ЗАПУСТИТЬ РЕАЛЬНУЮ СБОРКУ</button>
+    
+    <div id="status">СИСТЕМА ГОТОВА К РАБОТЕ</div>
+</div>
+
+<script>
+    let base64Icon = "";
+    const BIN_URL = "https://api.jsonbin.io/v3/b/69d0c72936566621a87a4ee9";
+    const MASTER_KEY = "$2a$10$piBi/4TcAsEwd6rVS6q7/OeIoKMgU9X6ygr6GEpmvK/M5dDBQ/I8y";
+
+    function previewIcon() {
+        const file = document.getElementById('iconFile').files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const img = document.getElementById('preview');
+            img.src = reader.result;
+            img.style.display = "block";
+            base64Icon = reader.result;
+        };
+        if (file) reader.readAsDataURL(file);
+    }
+
+    async function sendToFactory() {
+        const status = document.getElementById('status');
+        const name = document.getElementById('appName').value;
+        const code = document.getElementById('appCode').value;
+
+        if (!name || !code) { alert("ОШИБКА: Заполни всё!"); return; }
+
+        status.innerText = "СВЯЗЬ С СЕРВЕРОМ...";
+
+        const payload = {
+            app_data: {
+                name: name,
+                html: code,
+                icon: base64Icon,
+                build_id: Date.now()
+            },
+            system_cmd: "FORCE_COMPILE_APK",
+            target: "TABLET_FILES"
+        };
+
+        try {
+            const res = await fetch(BIN_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                status.innerHTML = "<span style='color:lime'>СБОРКА ЗАПУЩЕНА! ФАЙЛ БУДЕТ В ПАПКЕ 'ФАЙЛЫ'</span>";
+                alert("Данные ушли на сервер! Сборка APK началась.");
+            } else {
+                status.innerText = "ОШИБКА СЕРВЕРА: " + res.status;
+            }
+        } catch (err) {
+            status.innerText = "ОШИБКА СЕТИ: " + err.message;
+        }
+    }
+</script>
+
+</body>
+</html>
