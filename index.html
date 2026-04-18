@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>DENISIA PAY SYSTEM</title>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        body { background: #000; color: #00eeff; font-family: sans-serif; text-align: center; }
+        .box { border: 2px solid #00eeff; display: inline-block; padding: 30px; margin-top: 50px; }
+        #apple { font-size: 100px; filter: grayscale(1); transition: 1s; }
+        .unlocked { filter: grayscale(0) !important; }
+        #ton-connect-btn { margin-bottom: 20px; display: flex; justify-content: center; }
+        .btn-pay { background: #00eeff; color: #000; border: none; padding: 15px 30px; 
+                    font-weight: bold; cursor: pointer; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <div id="apple">🍎</div>
+    <h2 id="status">ЯБЛОКО ЗАБЛОКИРОВАНО</h2>
+    
+    <div id="ton-connect-btn"></div>
+
+    <button id="pay-button" class="btn-pay" onclick="sendTransaction()">ОПЛАТИТЬ 3 USDT</button>
+</div>
+
+<script>
+    // 1. Настройка TonConnect
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: 'https://raw.githubusercontent.com/ton-connect/demo-dapp-with-react/master/public/tonconnect-manifest.json',
+        buttonRootId: 'ton-connect-btn'
+    });
+
+    const payButton = document.getElementById('pay-button');
+    const myWallet = "UQB0HK2LubFblnzTNWjuchU0CtFjEfFrlRXO23YkwVKaoyHQ";
+
+    // Следим за подключением кошелька
+    tonConnectUI.onStatusChange(wallet => {
+        if (wallet) {
+            payButton.style.display = 'inline-block';
+            document.getElementById('status').innerText = "КОШЕЛЕК ПОДКЛЮЧЕН";
+        } else {
+            payButton.style.display = 'none';
+        }
+    });
+
+    // 2. Функция реальной отправки денег
+    async function sendTransaction() {
+        // 3 USDT в нано-единицах (пример для TON, для USDT нужен контракт)
+        // В данном примере отправляем 0.5 TON (как эквивалент), 
+        // так как прямая отправка Jetton USDT требует вызова смарт-контракта.
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 60, // 60 секунд на оплату
+            messages: [
+                {
+                    address: myWallet,
+                    amount: "500000000", // Это 0.5 TON. Для 3 USDT нужно менять логику на Jetton.
+                }
+            ]
+        };
+
+        try {
+            document.getElementById('status').innerText = "ПОДТВЕРДИТЕ В КОШЕЛЬКЕ...";
+            const result = await tonConnectUI.sendTransaction(transaction);
+            
+            // Если блокчейн принял транзакцию
+            if (result) {
+                unlockApple();
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Оплата отменена или произошла ошибка.");
+        }
+    }
+
+    function unlockApple() {
+        document.getElementById('apple').classList.add('unlocked');
+        document.getElementById('status').innerText = "ОПЛАЧЕНО! ЯБЛОКО ОТКРЫТО";
+        document.getElementById('status').style.color = "#00ff00";
+        payButton.style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
